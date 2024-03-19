@@ -1,0 +1,2 @@
+# SAFPredDB
+Bacterial synteny database
