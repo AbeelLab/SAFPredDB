@@ -71,7 +71,7 @@ def extract_cdhit_clusters(cluster_file_path, rep_file_path, out_path=None):
             if line.startswith('>Cluster'):
                 c = int(line.strip().split()[-1])
                 cluster_list.append(c)
-                if c! = 0: 
+                if c != 0: 
                     prot_list.append(cur_prot)
                     len_list.append(cur_len)
                 cur_len = []
