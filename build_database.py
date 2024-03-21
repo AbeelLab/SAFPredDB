@@ -4,8 +4,26 @@ import input_utils
 
 from tqdm import tqdm
 
-
 def find_gene_neighbors_df(gene_df, curpos, contig_len, gene, max_dist=5000):
+    """ 
+    Helper function to quickly calculate the neighbors of a gene in a pandas dataframe
+    Parameters
+    ----------
+    gene_df : pandas dataframe
+        A pandas dataframe that contains gene ID and gene position vector (start, end, strand)
+    curpos : list
+        Current position vector of the seed gene (start, end , strand)
+    contig_len : int
+        Length of the contig the gene is located on. Needed only if the contig is circular
+    gene : str
+        Locus tag or ID of the seed gene. Should match the IDs in the gene_df
+    max_dist : int
+        Maximum distance between the neighbor genes. Default is 5000
+    Returns
+    -------
+    neighbors : list
+        All neighbors of the seed gene
+    """
     res = gene_df.apply(lambda x: input_utils.calc_intergenic_dist(curpos, x.pos, 
                                                                    contig_len = contig_len), axis=1)
     neighbors = list(res[res < max_dist].index.difference([gene]))
@@ -87,7 +105,28 @@ def find_neighborhood(gene_dict, contig_dict, cluster_dict, genome_dict, max_dis
     return res_dict
 
 def find_synteny(neighbor_dict, gene_dict, contig_dict):
-
+    """
+    Find the initial syntenic regions, based on the gene neighborhoods collected
+    ----------
+    neighbor_dict : dict 
+        A mapping of gene IDs to its neighbor genes 
+        {gene_id: {'neighbors': neighbors, 'neighbors_passed': neighbors_passed}}
+    gene_dict : dict 
+        A mapping of gene IDs to its contig, position on the genome and its cluster ID 
+        {gene_id: {'cluster_id': cluster_id, 'contig': contig, 'pos': [start_pos, end_pos, strand]}}        
+    contig_dict : dict
+        A mapping of contigs to the contig length and the genes located on the contig
+        {contig_id: {'contig_len': contig_len, 'genes': genes}}  
+    Returns
+    -------
+    synteny_dict : dict
+        A dictionary with final results listing initial synteny vectors mapped to their ID and
+        intergenic distance
+    synteny_vec : list
+        A list of all synteny vectors generated from the neighborhoods
+    intergenic_dist_vec : list
+        A list of all intergenic distances within a synteny vector
+    """
     num_seed_genes = len(neighbor_dict)
     gene_list = gene_dict.keys()
     synteny_vec = []
@@ -99,7 +138,7 @@ def find_synteny(neighbor_dict, gene_dict, contig_dict):
         add_intergenic_dist = []
         if seed_gene not in gene_list:
             continue
-        if i % 1e5 == 0:
+        if i % 1e3 == 0:
             print("Finished {:.2f}% of the seed genes".format(i/num_seed_genes*100))
         neighbors = seed_gene_vals['neighbors_passed']
         # We have neighbors: find the synteny vector
@@ -132,53 +171,63 @@ def find_synteny(neighbor_dict, gene_dict, contig_dict):
         if synteny_tuple in synteny_collected.keys():
             synteny_collected[synteny_tuple]['intergenic_dist'].append(intergenic_dist)
         else:
-            synteny_collected[synteny_tuple] = {'synteny_id': synteny_count, 'intergenicdist': [intergenic_dist]}
+            synteny_collected[synteny_tuple] = {'synteny_id': synteny_count, 'intergenic_dist': [intergenic_dist]}
             synteny_count = synteny_count + 1
 
-    synteny_dict = {v['synteny_id']: {'region_id': k, 'intergenic_dist': v['intergenic_dist']}
+    synteny_dict = {v['synteny_id']: {'region': k, 'intergenic_dist': v['intergenic_dist']}
                                       for k, v in synteny_collected.items()}
     
     return synteny_dict, synteny_vec, intergenic_dist_vec
 
-    def break_synteny(synteny_dict, max_intergenic_dist=300):
+def break_synteny(synteny_dict, max_intergenic_dist=300):
+    """
+    Break syntenic regions with genes too far apart
+    ----------
+    synteny_dict : dict
+        A dictionary with final results listing initial synteny vectors mapped to their ID and
+        intergenic distance
+    max_intergenic_dist : int
+        Maximum intergenic distance allowed within a syntenic region. Default is 300
+    Returns
+    -------
+    db_df : pandas dataframe
+        A dataframe that lists all the final syntenic regions, mapping region ID to gene clusters,
+        intergenic distances, and the region length (number of gene clusters in a region)
+    """
+    synteny_df = pd.DataFrame(synteny_dict.values(), index=synteny_dict.keys())
+    synteny_df.loc[:,'region_len'] = synteny_df.region.apply(len)
+    synteny_df.loc[:,'min_intergenic_dist'] = synteny_df.intergenic_dist.apply(lambda x: np.array(x).min(axis=0))
+    
+    num_synteny = len(synteny_df)
+    synteny_count = 0
+    synteny_dict = {}
+    for i, (synteny_id, row) in enumerate(synteny_df.iterrows()):
+        if i % 1e3 == 0:
+            print("Finished {:.2f}% of the syntenic regions".format(i/num_synteny*100))
+        add_synteny = []
+        add_intergenic_dist = []
+        for j, (c1, c2) in enumerate(zip(row.region, row.region[1:])):
+            intergenic_dist = row.min_intergenic_dist[j]
+            if intergenic_dist <= max_intergenic_dist:
+                if len(add_synteny) == 0:
+                    add_synteny.append(c1)
+                add_synteny.append(c2)
+                add_intergenic_dist.append(intergenic_dist)
+            else:
+                if len(add_synteny) > 0:
+                    synteny_dict[synteny_count] = {'region': add_synteny, 'intergenic_dist': add_intergenic_dist}
+                    add_synteny = []
+                    add_intergenic_dist = []
+                    synteny_count = synteny_count + 1
+        if len(add_synteny) > 0:
+            synteny_dict[synteny_count] = {'region': add_synteny, 'intergenic_dist': add_intergenic_dist}
+            synteny_count = synteny_count + 1
 
-        synteny_df = pd.DataFrame(synteny_dict.values(), index=synteny_dict.keys())
-        synteny_df.loc[:,'region_len'] = synteny_df.synteny_id.apply(len)
-        synteny_df.loc[:,'min_intergenic_dist'] = synteny_df.intergenic_dist.apply(lambda x: np.array(x).min(axis=0))
-        synteny_df.to_pickle('output/embeddings/pangenome/foundoperons.pkl.gz')
-        
-        num_synteny = len(synteny_df)
-        synteny_count = 0
-        synteny_dict = {}
-        for i, (synteny_id, row) in enumerate(synteny_df.iterrows()):
-            if i % 1e5==0:
-                print("Finished {:.2f}% of the syntenic regions".format(i/num_synteny*100))
-            add_synteny = []
-            add_intergenic_dist = []
-            for j, (c1, c2) in enumerate(zip(row.synteny_id, row.synteny_id[1:])):
-                intergenic_dist = row.min_intergenic_dist[j]
-                if intergenic_dist <= max_intergenic_dist:
-                    if len(add_synteny) == 0:
-                        add_synteny.append(c1)
-                    add_synteny.append(c2)
-                    add_intergenic_dist.append(intergenic_dist)
-                else:
-                    if len(add_synteny) > 0:
-                        synteny_dict[synteny_count] = {'region': add_synteny, 'intergenic_dist': add_intergenic_dist}
-                        add_synteny = []
-                        add_intergenic_dist = []
-                        synteny_count = synteny_count + 1
-            if len(add_synteny) > 0:
-                synteny_dict[synteny_count] = {'region': add_synteny, 'intergenicdist': addintd}
-                synteny_count = synteny_count + 1
-
-        # Write the final synteny regions into a dataframe
-        db_df = pd.DataFrame(synteny_dict.values(), index=synteny_dict.keys())
-        db_df.loc[:,'region_len'] = db_df.region.apply(lambda x: len(x))
+    # Write the final synteny regions into a dataframe
+    db_df = pd.DataFrame(synteny_dict.values(), index=synteny_dict.keys())
+    db_df.loc[:,'region_len'] = db_df.region.apply(lambda x: len(x))
 
     return db_df
-
-
 
     
 
