@@ -26,11 +26,33 @@ As input, you will need the following 4 mapping dictionaries (stored as pickle f
 You can run the python script `build_safpreddb.py` as follows
 
 ```bash
-build_safpreddb -i data -o out --max_dist 5000 --max_intergenic_dist 300
+python build_safpreddb.py -i data -o out --max_dist 5000 --max_intergenic_dist 300
 ```
 This command will build a synteny database and write the database contents as a pandas dataframe into the directory `out` in a compressed pickle file titled `safpreddb.pkl.gz`
 
-## Edit DAFPredDB 
+```bash
+python build_safpreddb.py -h 
+usage: build_safpreddb.py [-h] --input_dir INPUT_DIR --output_dir OUTPUT_DIR [--max_dist MAX_DIST]
+                          [--max_intergenic_dist MAX_INTERGENIC_DIST]
+
+build SAFPredDB
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input_dir INPUT_DIR, -i INPUT_DIR
+                        Directory containing the input mapping files: gene_dict, contig_dict,
+                        cluster_dict, genome_dict
+  --output_dir OUTPUT_DIR, -o OUTPUT_DIR
+                        Output directory where the database will be stored
+  --max_dist MAX_DIST, -r MAX_DIST
+                        Maximum distance allowed within a syntenic region. Default is 5000
+  --max_intergenic_dist MAX_INTERGENIC_DIST, -g MAX_INTERGENIC_DIST
+                        Maximum intergenic distance allowed within a syntenic region. Default is
+                        300
+
+```
+
+## Edit SAFPredDB 
 
 Additionally, you can edit an existing database if you want to remove any clusters and the syntenic regions they are associated with. We used this script to generate the additional databases for our benchmark study where we reduced the maximum sequence similarity between the training and the test set. To have a database also consistent with the sequence similarity threshold, we removed clusters from the existing database.
 
