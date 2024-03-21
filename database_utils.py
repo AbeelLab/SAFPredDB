@@ -64,7 +64,7 @@ def edit_database(outdb_path, indb_path, keep_clusters, max_intergenic_dist=300,
                     add_intergenic_dist = []
                     region_count = region_count + 1
         if len(add_region) > 0:
-            out_syn_dict[region_count] = {'operon': add_region, 'intergenic_dist': add_intergenic_dist}
+            out_syn_dict[region_count] = {'region': add_region, 'intergenic_dist': add_intergenic_dist}
             region_count = region_count + 1
     out_db_df = pd.DataFrame(out_syn_dict.values(), index=out_syn_dict.keys())
     
