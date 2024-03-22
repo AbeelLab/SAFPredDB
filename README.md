@@ -60,8 +60,11 @@ Additionally, you can edit an existing database if you want to remove any cluste
 outdb_path = 'out/safpreddb_edited.pkl.gz'
 indb_path = 'out/safpreddb.pkl.gz'
 If you want to add back the singleton regions (regions with only one gene) to the database
-add_singletons = True # 
+add_singletons = True #
 
-out_db_df = edit_database(outdb_path, indb_path, keep_clusters, max_intergenic_dist=300,
+with open('data/keep_clusters.txt', 'r') as f:
+    feep_clusters = [int(line.atrip()) for line in f]
+
+out_db_df = edit_database(indb_path, outdb_path, keep_clusters, max_intergenic_dist=300,
                           add_singletons=add_singletons)
 ```
