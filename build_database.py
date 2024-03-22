@@ -233,6 +233,3 @@ def break_synteny(synteny_dict, max_intergenic_dist=300):
     db_df.loc[:,'region_len'] = db_df.region.apply(lambda x: len(x))
 
     return db_df
-
-    
-
