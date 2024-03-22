@@ -25,7 +25,8 @@ def find_gene_neighbors_df(gene_df, curpos, contig_len, gene, max_dist=5000):
         All neighbors of the seed gene
     """
     res = gene_df.apply(lambda x: input_utils.calc_intergenic_dist(curpos, x.pos, 
-                                                                   contig_len = contig_len), axis=1)
+                                                                   contig_len=contig_len), 
+                        axis=1)
     neighbors = list(res[res < max_dist].index.difference([gene]))
     return neighbors
 
@@ -78,7 +79,6 @@ def find_neighborhood(gene_dict, contig_dict, cluster_dict, genome_dict, max_dis
                     genes = contig_dict[contig]['genes']
                     genes = set(genes).intersection(gene_list)
                 except KeyError:
-                    #cluster_dict()print("There are no genes on contig {}!!".format(contig))
                     continue
                 contig_len = contig_dict[contig]['contig_len']
                 gene_df = pd.DataFrame({'contig_id': {gene: contig for gene in genes}, 
@@ -90,10 +90,12 @@ def find_neighborhood(gene_dict, contig_dict, cluster_dict, genome_dict, max_dis
                 saveflag = True
                 for gene, neighbors in neighbors.iteritems(): 
                     neighbors_passed = [n for n in neighbors if n in gene_list]
-                    neighbor_dict[gene] = {'neighbors': neighbors, 'neighbors_passed': neighbors_passed}
+                    neighbor_dict[gene] = {'neighbors': neighbors, 
+                                           'neighbors_passed': neighbors_passed}
                 contigs_done.append(contig)
             genomes_done.append(genome)
-            if not saveflag: continue # Didn't find any neighbors for any new genomes and/or contigs
+            if not saveflag: # Didn't find any neighbors for any new genomes and/or contigs 
+                continue 
             # Save the neighbors into the results dict  
             res_dict['neighbor_dict'] = neighbor_dict
             res_dict['genomes_done'] = genomes_done
@@ -171,7 +173,8 @@ def find_synteny(neighbor_dict, gene_dict, contig_dict):
         if synteny_tuple in synteny_collected.keys():
             synteny_collected[synteny_tuple]['intergenic_dist'].append(intergenic_dist)
         else:
-            synteny_collected[synteny_tuple] = {'synteny_id': synteny_count, 'intergenic_dist': [intergenic_dist]}
+            synteny_collected[synteny_tuple] = {'synteny_id': synteny_count, 
+                                                'intergenic_dist': [intergenic_dist]}
             synteny_count = synteny_count + 1
 
     synteny_dict = {v['synteny_id']: {'region': k, 'intergenic_dist': v['intergenic_dist']}
@@ -215,12 +218,14 @@ def break_synteny(synteny_dict, max_intergenic_dist=300):
                 add_intergenic_dist.append(intergenic_dist)
             else:
                 if len(add_synteny) > 0:
-                    synteny_dict[synteny_count] = {'region': add_synteny, 'intergenic_dist': add_intergenic_dist}
+                    synteny_dict[synteny_count] = {'region': add_synteny, 
+                                                   'intergenic_dist': add_intergenic_dist}
                     add_synteny = []
                     add_intergenic_dist = []
                     synteny_count = synteny_count + 1
         if len(add_synteny) > 0:
-            synteny_dict[synteny_count] = {'region': add_synteny, 'intergenic_dist': add_intergenic_dist}
+            synteny_dict[synteny_count] = {'region': add_synteny, 
+                                           'intergenic_dist': add_intergenic_dist}
             synteny_count = synteny_count + 1
 
     # Write the final synteny regions into a dataframe
@@ -228,6 +233,3 @@ def break_synteny(synteny_dict, max_intergenic_dist=300):
     db_df.loc[:,'region_len'] = db_df.region.apply(lambda x: len(x))
 
     return db_df
-
-    
-
