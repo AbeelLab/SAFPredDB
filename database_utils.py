@@ -111,8 +111,7 @@ def edit_database(indb_path, outdb_path, keep_clusters, max_intergenic_dist=300,
         singletons.drop_duplicates('region', inplace=True)
         singletons.update(singletons.region.apply(lambda x: [x]))
         # Recalculate region stats after adding singletons
-        out_db_df.loc[:,'region_len'] = out_db_df.region.apply(lambda x: len(x))
-        out_db_df = out_db_df.append(singletons, ignore_index=True)
+        out_db_df = pd.concat([out_db_df, singletons], ignore_index=True)
         out_db_df.loc[:,'region_len'] = out_db_df.region.apply(lambda x: len(x))
     
     print("Saving the new synteny database")
