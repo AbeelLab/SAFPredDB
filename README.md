@@ -89,3 +89,37 @@ with open('data/keep_clusters.txt', 'r') as f:
 out_db_df = edit_database(indb_path, outdb_path, keep_clusters, max_intergenic_dist=300,
                           add_singletons=add_singletons)
 ```
+
+## Citation
+
+If you find our method or any of the original script in this repository useful, please cite the manuscript:
+
+```python
+@article {urhan2024safpred,
+    author = {Aysun Urhan and Bianca-Maria Cosma and Ashlee M. Earl and Abigail L. Manson and Thomas Abeel},
+    title = {SAFPred: Synteny-aware gene function prediction for bacteria using protein embeddings},
+    year = {2024},
+    volume = {40},
+    number = {6},
+    pages = {btae328},
+    month = {05},
+    doi = {10.1093/bioinformatics/btae328},
+    journal = {Bioinformatics}
+}
+```
+
+If you use the full SAFPredDB database from the [4TU.ResearchData](https://doi.org/10.4121/ac84802e-853f-46f1-9786-b9d29c0f7557.v1) please cite
+
+```python
+@misc{urhan2024safpreddb,
+  doi = {10.4121/AC84802E-853F-46F1-9786-B9D29C0F7557},
+  url = {https://data.4tu.nl/datasets/ac84802e-853f-46f1-9786-b9d29c0f7557},
+  author = {Urhan, Aysun and Cosma, Bianca-Maria and Earl, Ashlee M. and Manson, Abigail L. and Abeel, Thomas},
+  keywords = {Microbiology, FOS: Biological sciences, Genetics, Biological Sciences, bionformatics, microbial genomics, genomics, protein language model, bacterial genomics, comparative genomics, protein embeddings, sequence analysis, bacterial synteny},
+  language = {en},
+  title = {SAFPredDB: Bacterial synteny database},
+  publisher = {4TU.ResearchData},
+  year = {2024},
+  copyright = {Creative Commons Attribution Non Commercial 4.0 International}
+}
+```
